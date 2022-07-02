@@ -41,6 +41,23 @@ public final class JcTools {
       return (long) ((ArrayBlockingQueue<?>) queue).remainingCapacity() + queue.size();
     }
   }
+  
+  /**
+   * Remove up to <i>maxExportBatchSize</i> elements from the {@link Queue} and hand to consume.
+   *
+   * @throws IllegalArgumentException c is {@code null}
+   * @throws IllegalArgumentException if limit is negative
+   */
+  public static <T> void drain(Queue<T> queue, int maxExportBatchSize, Consumer<T> consumer) {
+    if (queue instanceof MessagePassingQueue) {
+      ((MessagePassingQueue<?>) queue).drain((span) -> consumer.accept((T) span), maxExportBatchSize);
+    } else {
+      int polledCount = 0;
+      while (polledCount++ < maxExportBatchSize && (queue.peek()) != null) {
+        consumer.accept(queue.poll());
+      }
+    }
+  }
 
   private JcTools() {}
 }
